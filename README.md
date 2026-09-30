@@ -1,57 +1,101 @@
-# TMD sleep, pain, solar radiation, and vitamin D analyses
+# TMD_Sleep_VitaminD
 
-This repository reproduces the main and supplementary tables and figures for the study of sleep quality, psychological burden, pain, ambient solar radiation, and longitudinal serum 25-hydroxyvitamin D in patients with temporomandibular disorders.
+Analysis code accompanying the manuscript:
 
-Patient-level data are not included. The scripts expect the deidentified analysis workbook described in `data/README.md`.
+**Sleep Quality and Subsequent Vitamin D Status in Temporomandibular Disorders: Psychological, Pain, and Environmental Correlates**
 
-## Repository structure
+This retrospective cohort study examines sleep quality, psychological burden, pain, ambient solar radiation, and subsequent serum 25-hydroxyvitamin D [25(OH)D] status in patients with temporomandibular disorders (TMD). The scripts generate the main and supplementary tables and figures.
 
-```text
-R/                 Figure scripts
-python/            Statistical analysis and table scripts
-metadata/          Variable definitions used for Table S1
-data/              Instructions for placing the analysis workbook
-outputs/            Generated tables, figures, and supporting files
-reference_outputs/  Aggregate tables used to verify reproduction
+Participant-level study data are not included in this public repository. Numerical reproduction requires access to the original analysis workbook, subject to the ethical approvals and data-sharing conditions described in the manuscript.
+
+## Repository contents
+
+All scripts are stored directly in the repository root.
+
+| Files | Purpose |
+|---|---|
+| `common.py` | Shared Python data-loading, statistical, and output functions |
+| `tables.py` | Shared functions used by the non-machine-learning table scripts |
+| `Table_1.py`, `Table_2.py`, `Table_3.py` | Main Tables 1–3 |
+| `Table_4.py` | Ridge-regression evaluation, Table 4, Table S3, and supporting results for Figure 5 |
+| `Table_S1.py`, `Table_S2.py`, `Table_S3.py`, `Table_S4.py` | Supplementary Tables S1–S4 |
+| `run_all_tables.py` | Runs the table analyses |
+| `common.R` | Shared R input and output functions |
+| `Figure_1.R` through `Figure_5.R` | Main Figures 1–5 |
+| `Figure_S1.R`, `Figure_S2.R` | Supplementary Figures S1 and S2 |
+| `install_packages.R` | Installs the R packages used by the figure scripts |
+
+The shared table module must be named **`tables.py`**, in lowercase, and placed alongside the other Python scripts.
+
+## Software and installation
+
+The manuscript reports Python 3.12 and R 4.5.1. Package versions are not currently pinned in this repository.
+
+Run the following commands from the repository root.
+
+### Python
+
+Create a virtual environment:
+
+```bash
+python -m venv .venv
 ```
 
-## Outputs
+Activate it on macOS or Linux:
 
-| Manuscript item | Script | Main output |
-|---|---|---|
-| Table 1 | `python/Table_1.py` | `outputs/tables/Table_1.csv` |
-| Table 2 | `python/Table_2.py` | `outputs/tables/Table_2.csv` |
-| Table 3 | `python/Table_3.py` | `outputs/tables/Table_3.csv` |
-| Table 4 | `python/Table_4.py` | `outputs/tables/Table_4.csv` |
-| Table S1 | `python/Table_S1.py` | `outputs/tables/Table_S1.csv` |
-| Table S2 | `python/Table_S2.py` | `outputs/tables/Table_S2.csv` |
-| Table S3 | `python/Table_S3.py` | `outputs/tables/Table_S3.csv` |
-| Table S4 | `python/Table_S4.py` | `outputs/tables/Table_S4.csv` |
-| Figure 1 | `R/Figure_1.R` | `outputs/figures/Figure_1.*` |
-| Figure 2 | `R/Figure_2.R` | `outputs/figures/Figure_2.*` |
-| Figure 3 | `R/Figure_3.R` | `outputs/figures/Figure_3.*` |
-| Figure 4 | `R/Figure_4.R` | `outputs/figures/Figure_4.*` |
-| Figure 5 | `R/Figure_5.R` | `outputs/figures/Figure_5.*` |
-| Figure S1 | `R/Figure_S1.R` | `outputs/figures/Figure_S1.*` |
-| Figure S2 | `R/Figure_S2.R` | `outputs/figures/Figure_S2.*` |
+```bash
+source .venv/bin/activate
+```
 
-`Table_4.py` also generates Table S3 and the repeated cross-validation files required by Figure 5. Table S2 includes a separate file for the three-category VAS trajectory summary.
+Or activate it in Windows PowerShell:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Install the Python packages used by the available analysis scripts:
+
+```bash
+python -m pip install numpy pandas scipy scikit-learn openpyxl
+```
+
+### R
+
+```bash
+Rscript install_packages.R
+```
+
+The installer includes `readxl`, `readr`, `dplyr`, `tidyr`, `purrr`, `tibble`, `ggplot2`, `patchwork`, `scales`, `stringr`, `igraph`, `ggraph`, `ggforce`, `sandwich`, `lmtest`, and `svglite`.
+
+## Project paths
+
+For the flat repository layout, use the following project-root settings so that input data and generated outputs are located within the repository.
+
+In `common.py`:
+
+```python
+PROJECT_ROOT = Path(__file__).resolve().parent
+```
+
+In `common.R`:
+
+```r
+project_dir <- normalizePath(script_dir, mustWork = FALSE)
+```
+
+The paths described below assume these settings. Helper versions using `parents[1]` in Python or `file.path(script_dir, "..")` in R instead resolve the project root one directory above the repository.
 
 ## Data setup
 
-Place the workbook at:
+Place the analysis workbook at:
 
 ```text
 data/20260925_TMD_Sleep_VitaminD_Analysis_Master.xlsx
 ```
 
-Alternatively, set the `TMD_SLEEP_DATA` environment variable to the workbook location.
+Create the local `data/` directory if needed. All scripts read the `Analysis_Master` worksheet. The workbook must retain the variable names and coding expected by the scripts, including `Study_ID`, `Eligible_PSQI_analysis`, and `PSQI_global_score`.
 
-PowerShell:
-
-```powershell
-$env:TMD_SLEEP_DATA = "C:\path\to\20260925_TMD_Sleep_VitaminD_Analysis_Master.xlsx"
-```
+Alternatively, set `TMD_SLEEP_DATA` to the workbook's absolute path. This overrides the input location without changing the output location.
 
 macOS or Linux:
 
@@ -59,81 +103,71 @@ macOS or Linux:
 export TMD_SLEEP_DATA="/path/to/20260925_TMD_Sleep_VitaminD_Analysis_Master.xlsx"
 ```
 
-All analyses read the `Analysis_Master` worksheet. The expected primary analysis cohort contains 120 participants: 62 good sleepers and 58 poor sleepers. SCL-90-R GSI and STOP-Bang scores are available for 92 and 101 participants, respectively. Missing questionnaire values are not imputed.
-
-## Software
-
-The table scripts were checked with Python 3.12. Install the required packages in an isolated environment:
-
-```bash
-python -m venv .venv
-```
-
-Windows:
+Windows PowerShell:
 
 ```powershell
-.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
+$env:TMD_SLEEP_DATA = "C:\path\to\20260925_TMD_Sleep_VitaminD_Analysis_Master.xlsx"
 ```
 
-macOS or Linux:
+The expected PSQI analysis cohort contains 120 participants, comprising 62 good sleepers and 58 poor sleepers. SCL-90-R GSI is available for 92 participants and STOP-Bang for 101 participants. The fully integrated complete-case cohort contains 81 participants. Missing questionnaire values are not imputed, and analysis-specific sample sizes depend on the required variables.
+
+## Running the analyses
+
+### Tables
+
+After adding `tables.py` and configuring the data path, generate the tables with:
 
 ```bash
-source .venv/bin/activate
-python -m pip install -r requirements.txt
+python run_all_tables.py
 ```
 
-Install the R packages with:
+Individual table scripts can also be run directly, for example:
 
 ```bash
-Rscript R/install_packages.R
+python Table_1.py
+python Table_4.py
 ```
 
-The figure scripts use `readxl`, `readr`, `dplyr`, `tidyr`, `purrr`, `tibble`, `ggplot2`, `patchwork`, `scales`, `stringr`, `igraph`, `ggraph`, `ggforce`, `sandwich`, and `lmtest`. SVG export additionally uses `svglite`.
+`Table_4.py` also generates Table S3 and the supporting files required by Figure 5. It uses 100 repetitions of five-fold cross-validation and may take longer than the other table analyses.
 
-## Reproduction
+### Figures
 
-Generate all tables:
+Run each figure script with `Rscript`:
 
 ```bash
-python python/run_all_tables.py
+Rscript Figure_1.R
+Rscript Figure_2.R
+Rscript Figure_3.R
+Rscript Figure_4.R
+Rscript Figure_5.R
+Rscript Figure_S1.R
+Rscript Figure_S2.R
 ```
 
-Table 4 uses 100 repeated five-fold partitions and therefore takes longer than the other tables. After the table scripts finish, generate all figures:
+Run `Table_4.py` before `Figure_5.R`, because Figure 5 reads its saved cross-validation results and participant-level predictions.
 
-```bash
-Rscript R/run_all_figures.R
-```
+`Figure_S2.R` performs the dominance analysis and 2,000 stratified paired bootstrap resamples in R. This analysis may take additional time.
 
-Figure S2 uses 2,000 stratified paired bootstrap resamples and is the slowest R analysis. Each script may also be run separately.
+## Generated outputs
 
-## Analysis conventions
+With the project-root settings above, the scripts create the following directories as needed:
 
-Good sleepers were defined by PSQI global score ≤5 and poor sleepers by PSQI global score >5. Table 1 applies the Benjamini-Hochberg procedure across the 20 nondefinitional group comparisons; PSQI global score and sleep duration are shown descriptively because they define or contribute to sleep-group classification. Table 2 controls the three PSQI-score models and the three sleep-group models as separate analysis families. Table 3 controls separate and integrated follow-up 25(OH)D models as separate families.
+| Directory | Contents |
+|---|---|
+| `outputs/tables/` | Main and supplementary tables in CSV format |
+| `outputs/figures/` | Figure files and figure-specific statistical summaries |
+| `outputs/supporting/` | Cross-validation metrics, model summaries, and predictions used by Figure 5 |
 
-Linear-model inference uses HC3 heteroscedasticity-consistent standard errors. Count and binary outcomes use robust Poisson and logistic models, respectively. Table 4 uses ridge regression with standardization and penalty selection confined to the training data. Model comparisons use paired Nadeau-Bengio corrected repeated-cross-validation tests, followed by Benjamini-Hochberg correction within each outcome.
+Figure export formats vary by script and include PDF, PNG, TIFF, and SVG. Supporting outputs can contain participant-level predictions and are intended for local use.
 
-Figure 2 excludes structural or part-whole correlations from FDR-based substantive interpretation. Figure S2 reports order-independent Shapley/dominance contributions with 95% intervals from 2,000 bootstrap resamples; it describes explanatory contribution rather than out-of-sample prediction.
+## Analysis notes
 
-## Reproduction checks
+- Good sleepers have a PSQI global score of ≤5; poor sleepers have a score of >5.
+- Correlation analyses use available pairs. Regression and prediction analyses use complete cases for the variables required by each analysis.
+- Linear-model inference uses HC3 heteroscedasticity-consistent standard errors where specified.
+- Ridge-regression standardization and penalty selection are performed within the training data. Table 4 uses fixed seeds and the same outer cross-validation partitions for models compared within each outcome.
+- Repeated-cross-validation model comparisons use the Nadeau–Bengio correction, with Benjamini–Hochberg adjustment within each outcome.
+- Figure S2 reports explanatory contributions to model R² and bootstrap uncertainty. These contributions do not represent out-of-sample predictive performance.
 
-Successful execution should recover these denominators:
+Refer to the manuscript Methods and table legends for the full model specifications, adjustment variables, and multiple-comparison families. Exact numerical reproduction depends on the original workbook and software environment.
 
-- PSQI analysis cohort: 120
-- Good sleepers: 62
-- Poor sleepers: 58
-- SCL-90-R GSI available: 92
-- STOP-Bang available: 101
-- Fully integrated complete-case cohort for Figure S2: 81
-
-Aggregate reference tables are provided in `reference_outputs/tables`. Small differences beyond the displayed precision usually indicate a different software version, data revision, missing-value rule, or cross-validation seed.
-
-After generating the tables, compare them with the archived aggregate results:
-
-```bash
-python python/validate_outputs.py
-```
-
-## License
-
-Code is released under the MIT License. Access to the study data remains subject to the approvals and data-sharing conditions described in the manuscript.
